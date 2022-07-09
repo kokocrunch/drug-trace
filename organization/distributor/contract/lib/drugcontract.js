@@ -80,13 +80,22 @@ class DrugBatchContract extends Contract {
      * Note: 'buy' puts drugs in 'PENDING' state - subject to transfer confirmation
      * 
      * @param {Context} ctx 
-     * @param {String} currentOwner distributor
+     * @param {String} distributor
      * @param {String} newOwner retailer
      * @param {String} description 
      * @param {Integer} quantity 
      * @param {String} purchaseDatetime 
      */
-    async order(ctx, currentOwner, newOwner, description, quantity, purchaseDatetime) {
+    async order(ctx, distributor, newOwner, description, quantity, purchaseDatetime) {
+
+        // Retrieve the current drug using key fields provided
+        let drugKey = DrugBatch.makeKey([distributor, newOwner, drugBatchNumber]);
+        let drug = await ctx.drugList.getDrug(drugKey);
+
+        // Validate current owner (must be the distributor)
+        if (drug.getOwner() !== distributor) {
+            throw new Error('\nDurg ' + distributor + newOwner + drugBatchNumber + ' is not owned by ' + distributor);
+        }
 
         // Drug set to 'PENDING_DISTRIBUTE' - can only be transferred by distributor
         drug.setPending_Distribute();
@@ -98,14 +107,15 @@ class DrugBatchContract extends Contract {
 
     /**
      * 
-     * Transfer drug batch ownership with quantity: only the owning org has the authority to execute. It is the complement to the 'order'
-     * e.g. procure -> order -> transfer -> request_recall -> transfer
+     * Distribute drug batch with quantity: only the distributor has the authority to execute. It is the complement to the 'order'
+     * e.g. procure -> order -> distribute -> request_recall -> recall
      * 
      * @param {Context} ctx 
      * @param {String} manufacturer 
      * @param {String} manufacturer_address 
-     * @param {String} currentOwner
+     * @param {String} distributor
      * @param {String} newOwner 
+     * @param {String} newOwnerMSP
      * @param {String} description 
      * @param {Integer} qty 
      * @param {String} drugBatchNumber 
@@ -114,29 +124,27 @@ class DrugBatchContract extends Contract {
      * @param {Integer} totalPrice 
      * @param {String} confirmDateTime
      */
-    async transfer(ctx, manufacturer, manufacturer_address, currentOwner, newOwner, newOwnerMSP, description, qty, drugBatchNumber, expiry, unitPrice, totalPrice, confirmDateTime) {
+    async distribute(ctx, manufacturer, manufacturer_address, distributor, newOwner, newOwnerMSP, description, qty, drugBatchNumber, expiry, unitPrice, totalPrice, confirmDateTime) {
         
         // Retrieve the current drug batch using key fields provided
-        let drugKey = DrugBatch.makeKey([currentOwner, newOwner, drugBatchNumber]);
+        let drugKey = DrugBatch.makeKey([distributor, newOwner, drugBatchNumber]);
         let drug = await ctx.drugList.getDrug(drugKey);
 
         // Validate current owner's MSP in the paper === invoking transferer's MSP ID - can only transfer if you are the owning org.
         if (drug.getOwnerMSP() !== ctx.clientIdentity.getMSPID()) {
-            throw new Error('\nDrug ' + currentOwner + newOwner + drugBatchNumber + ' is not owned by the current invoking Organization, and not authorized to transfer');
+            throw new Error('\nDrug ' + distributor + newOwner + drugBatchNumber + ' is not owned by the current invoking Organization, and not authorized to transfer. You must be a distributor to invoke this transaction.');
         }
 
         // Drug needs to be 'pending' - which means you need to have run 'order' transaction first.
-        if (!drug.isPending_Distribute() || !drug.isPending_Recall()) {
-            throw new Error('\Drug ' + currentOwner + newOwner + drugBatchNumber + ' is not currently in state: PENDING_DISTRIBUTE or PENDING_RECALL. \n For transfer to occur: must run order or recall_request transaction first');
+        if (!drug.isPending_Distribute()) {
+            throw new Error('\Drug ' + distributor + newOwner + drugBatchNumber + ' is not currently in state: PENDING_DISTRIBUTE. \n For transfer to occur: must run order transaction first');
         }
-
-        // HERE!!!!!!! Set drug state to DISTRIBUTED if owner is a distributor and state to RECALLED if owner is a retailer
-        if (currentOwner === )
         // else all is well
 
         drug.setOwner(newOwner);
         // set the MSP of the transferee (so that, that org may also pass MSP check, if subsequently transferred)
         drug.setOwnerMSP(newOwnerMSP);
+        drug.setDistributed();
         drug.confirmDateTime = confirmDateTime;
 
         // Update the drug
@@ -167,6 +175,48 @@ class DrugBatchContract extends Contract {
         }
         // drug set to 'PENDING_RECALL' - can only be transferred by identity from owning org (MSP check).
         drug.setPending_Recall();
+
+        // Update the drug
+        await ctx.drugList.updateDrug(drug);
+        return drug;
+    }
+
+    /**
+     * 
+     * @param {Context} ctx 
+     * @param {String} manufacturer 
+     * @param {String} manufacturer_address 
+     * @param {String} retailer 
+     * @param {String} newOwner 
+     * @param {String} newOwnerMSP 
+     * @param {String} description 
+     * @param {Integer} qty 
+     * @param {String} drugBatchNumber 
+     * @param {String} expiry 
+     * @param {Integer} unitPrice 
+     * @param {Integer} totalPrice 
+     * @returns 
+     */
+    async recall(ctx, manufacturer, manufacturer_address, retailer, newOwner, newOwnerMSP, description, qty, drugBatchNumber, expiry, unitPrice, totalPrice) {
+
+        // Retrieve the current drug using key fields provided
+        let drugKey = DrugBatch.makeKey([newOwner, retailer, drugBatchNumber]);
+        let drug = await ctx.drugList.getDrug(drugKey);
+
+        // Validate current owner's MSP in the paper === invoking transferer's MSP id - can only transfer if you are the owning org.
+        if (drug.getOwnerMSP() !== ctx.clientIdentity.getMSPID()) {
+            throw new Error('\nDrug ' + newOwner + retailer + drugBatchNumber + ' is not owned by the current invoking Organization, and not authorized to transfer' + retailer);
+        }
+        // Drug needs to be 'PENDING_RECALL' - which means you need to run 'recall_request' transaction first.
+        if (!drug.isPending_Recall()) {
+            throw new Error('\nDrug ' + newOwner + retailer + drugBatchNumber + ' is not currently in state: PENDING_RECALL. \nFor transfer to occur: must run recall_request transaction first');
+        }
+        // else all good
+
+        drug.setOwner(newOwner);
+        drug.setOwnerMSP(newOwnerMSP);
+        drug.setRecalled();
+        drug.confirmDateTime = confirmDateTime;
 
         // Update the drug
         await ctx.drugList.updateDrug(drug);
