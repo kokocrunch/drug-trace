@@ -1,5 +1,5 @@
 <template>
-  <div class="distributor">
+  <div class="retailer">
     <v-app-bar app color="#607D8B" outlined prominent dark>
 
       <v-toolbar-title class="pa-6"> Retailer's Dashboard </v-toolbar-title>
