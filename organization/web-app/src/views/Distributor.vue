@@ -1,15 +1,16 @@
 <template>
   <div class="distributor">
     <v-app-bar app color="#607D8B" outlined prominent dark>
+       
 
-      <v-toolbar-title class="pa-6"> Distributor's Dashbaord </v-toolbar-title>
+      <v-toolbar-title class="pa-6"> Distributor's Dashboard </v-toolbar-title>
 
       <v-spacer></v-spacer>
 
       <v-menu
        open-on-hover
        top
-       offset-x
+       offset
       >
 
       <template v-slot:activator="{ on, attrs }">
@@ -51,31 +52,137 @@
     </v-app-bar>
 
     <v-container class="py-16 my-15">
-      <v-row justify="space-around">
+      <v-row justify="space-around"
+      >
         <v-col
-         v-for="card in cards"
-         :key="card.title"
         >
         <v-hover v-slot="{ hover }">
           <v-card 
-           height="100%"
            :elevation= " hover ? 12: 6"
            :class="['pa-6', { 'on-hover': hover }]"
            rounded
           >
 
           <v-card-title style="word-break: break-word">
-           {{ card.title }}
+           Query Drug Information
           </v-card-title>
 
           <v-card-subtitle>
-            {{ card.desc }}
+            .
           </v-card-subtitle>
 
           <v-card-actions>
             <v-spacer></v-spacer>
-              <v-btn icon>
-                <v-icon> {{ card.icon }} </v-icon> 
+              <v-btn icon to="/queryform">
+                <v-icon> mdi-database-search </v-icon> 
+              </v-btn>
+          </v-card-actions>
+        
+        </v-card>
+        </v-hover>
+      </v-col>
+      <v-col
+        >
+        <v-hover v-slot="{ hover }">
+          <v-card 
+           :elevation= " hover ? 12: 6"
+           :class="['pa-6', { 'on-hover': hover }]"
+           rounded
+          >
+
+          <v-card-title style="word-break: break-word">
+           Add Drug Batch
+          </v-card-title>
+
+          <v-card-subtitle>
+            0 Batches of Drugs
+          </v-card-subtitle>
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+              <v-btn icon to="/addform">
+                <v-icon> mdi-package-variant-closed-plus </v-icon> 
+              </v-btn>
+          </v-card-actions>
+        
+        </v-card>
+        </v-hover>
+      </v-col>
+      <v-col
+        >
+        <v-hover v-slot="{ hover }">
+          <v-card 
+           :elevation= " hover ? 12: 6"
+           :class="['pa-6', { 'on-hover': hover }]"
+           rounded
+          >
+
+          <v-card-title style="word-break: break-word">
+           Drug Batch Orders
+          </v-card-title>
+
+          <v-card-subtitle>
+            0 Total Orders
+          </v-card-subtitle>
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+              <v-btn icon to="/pending">
+                <v-icon> mdi-pill </v-icon> 
+              </v-btn>
+          </v-card-actions>
+        
+        </v-card>
+        </v-hover>
+      </v-col>
+      <v-col
+        >
+        <v-hover v-slot="{ hover }">
+          <v-card 
+           :elevation= " hover ? 12: 6"
+           :class="['pa-6', { 'on-hover': hover }]"
+           rounded
+          >
+
+          <v-card-title style="word-break: break-word">
+           Request for Recall
+          </v-card-title>
+
+          <v-card-subtitle>
+            .
+          </v-card-subtitle>
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+              <v-btn icon to="">
+                <v-icon> mdi-archive-clock-outline </v-icon> 
+              </v-btn>
+          </v-card-actions>
+        
+        </v-card>
+        </v-hover>
+      </v-col>
+       <v-col
+        >
+        <v-hover v-slot="{ hover }">
+          <v-card 
+           :elevation= " hover ? 12: 6"
+           :class="['pa-6', { 'on-hover': hover }]"
+           rounded
+          >
+
+          <v-card-title style="word-break: break-word">
+           Delete Drug Batch
+          </v-card-title>
+
+          <v-card-subtitle>
+            .
+          </v-card-subtitle>
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+              <v-btn icon to="">
+                <v-icon> mdi-package-variant-closed-minus </v-icon> 
               </v-btn>
           </v-card-actions>
         
@@ -88,20 +195,6 @@
   </div>
 </template>
 
-<script>
-  export default {
-    data: () => ({
-      cards: [
-        { title: 'Query Drug Information', desc: '.', icon: 'mdi-database-search'},
-        { title: 'Add Drug Batch', desc: '0 Batches of Drugs', icon: 'mdi-package-variant-closed-plus' },
-        { title: 'Drug Batch Orders', desc: '0 Total Orders', icon: 'mdi-pill'},
-        { title: 'Request for Recall', desc: '.', icon: 'mdi-archive-clock-outline'},
-        { title: 'Delete Drug Batch', desc: '.', icon: 'mdi-package-variant-closed-minus'},
-      ],
-
-    }),
-  }
-</script>
 
 <style scoped>
 .v-card:on-hover {
